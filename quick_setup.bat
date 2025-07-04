@@ -1,43 +1,68 @@
 @echo off
-REM Setup and Quick Start Script for AI Playwright Testing Engine (Windows)
+REM Enhanced Setup and Quick Start Script for AI Playwright Testing Engine (Windows)
 
-echo 🚀 AI Playwright Testing Engine - Quick Setup
-echo ========================================
+echo 🚀 AI Playwright Testing Engine - Enhanced Setup
+echo ================================================
 
 REM Check if Python is available
 python --version >nul 2>&1
 if errorlevel 1 (
     echo ❌ Python is not installed or not in PATH
-    echo Please install Python 3.9+ from https://python.org
+    echo.
+    echo 💡 Please install Python 3.9+ from https://python.org/downloads/
+    echo    Make sure to check "Add Python to PATH" during installation
+    echo.
     pause
     exit /b 1
 )
 
-REM Run the setup script
-echo 📦 Running setup script...
-python setup.py
+REM Show Python version
+echo 📍 Checking Python version...
+python --version
 
+REM Check if pip is available
+python -m pip --version >nul 2>&1
 if errorlevel 1 (
-    echo ❌ Setup failed
+    echo ❌ pip is not available
+    echo 💡 Try: python -m ensurepip --upgrade
     pause
     exit /b 1
 )
 
 echo.
-echo 🎯 Would you like to run the quick start demo now? (y/n)
-set /p choice="> "
+echo 📦 Running enhanced setup script...
+echo    This will create a virtual environment and install dependencies
+echo    Please be patient, this may take several minutes...
+echo.
 
-if /i "%choice%"=="y" (
+REM Run the setup script
+python setup.py
+
+if errorlevel 1 (
     echo.
-    echo 🚀 Running quick start demo...
-    .\venv\Scripts\python.exe quick_start.py
-) else (
+    echo ❌ Setup encountered issues
     echo.
-    echo 💡 To run the demo later, use:
-    echo    .\venv\Scripts\activate
-    echo    python quick_start.py
+    echo 🔧 Common solutions:
+    echo    1. Run as Administrator
+    echo    2. Update pip: python -m pip install --upgrade pip
+    echo    3. Install setuptools: python -m pip install --upgrade setuptools
+    echo    4. Check your internet connection
+    echo.
+    echo 📞 For help, visit: https://github.com/dbbuilder/autoplaytest
+    echo.
+    pause
+    exit /b 1
 )
 
+echo.
+echo ✅ Setup completed successfully!
+echo.
+echo 💡 You can now run tests with:
+echo    venv\Scripts\python.exe quick_start.py
+echo    venv\Scripts\python.exe src\simple_runner.py --help
+echo.
+echo 🔧 To activate the virtual environment manually:
+echo    venv\Scripts\activate
 echo.
 echo ✅ All done! Press any key to exit...
 pause >nul

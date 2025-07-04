@@ -1,0 +1,37 @@
+# Optional dependencies for advanced features
+# Install these only if you need specific functionality
+
+# Advanced ML and AI features
+tensorflow==2.15.0
+
+# Computer vision
+opencv-python==4.8.1.78
+
+# Advanced plotting and visualization
+plotly==5.17.0
+
+# PostgreSQL support
+psycopg2-binary==2.9.9
+
+# Distributed processing
+celery==5.3.4
+redis==5.0.1
+
+# Database migrations
+alembic==1.13.1
+
+# Scheduling
+schedule==1.2.0
+
+# Selenium (if needed as fallback)
+selenium==4.15.2
+
+# Additional testing tools
+pytest-cov==4.1.0
+pytest-mock==3.12.0
+
+# Note: These packages may require additional system dependencies
+# Install them individually as needed:
+# pip install tensorflow
+# pip install opencv-python
+# pip install plotly
