@@ -1,0 +1,60 @@
+# Complete requirements for AI Playwright Testing Engine
+# This file includes ALL packages for full functionality
+# Use this only after running complete_setup_windows.bat or complete_setup_unix.sh
+
+# Core web automation and testing
+playwright==1.40.0
+
+# Async and web frameworks
+aiohttp==3.9.1
+fastapi==0.104.1
+uvicorn==0.24.0
+
+# Data validation and serialization
+pydantic==2.5.0
+
+# Database support
+sqlalchemy==2.0.23
+alembic==1.13.1
+psycopg2-binary==2.9.9
+
+# AI and Machine Learning
+tensorflow==2.15.0
+scikit-learn==1.3.2
+numpy==1.24.3
+pandas==2.0.3
+
+# Computer Vision
+opencv-python==4.8.1.78
+
+# Web scraping and parsing
+beautifulsoup4==4.12.2
+selenium==4.15.2
+
+# System monitoring and utilities
+psutil==5.9.6
+
+# Visualization and plotting
+matplotlib==3.7.2
+plotly==5.17.0
+
+# Configuration and utilities
+pyyaml==6.0.1
+python-dotenv==1.0.0
+
+# Logging
+loguru==0.7.2
+
+# Task scheduling and distributed processing
+schedule==1.2.0
+celery==5.3.4
+redis==5.0.1
+
+# Testing framework
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+pytest-mock==3.12.0
+
+# Note: This file should only be used after running the complete system setup
+# which installs all necessary build tools and system dependencies.
