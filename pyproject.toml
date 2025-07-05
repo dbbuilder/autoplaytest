@@ -1,0 +1,118 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "autoplaytest"
+version = "0.1.0"
+description = "AI-powered Playwright testing engine for automated web application testing"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "Your Name", email = "your.email@example.com"},
+]
+keywords = ["testing", "playwright", "automation", "ai", "web-testing"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Testing",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "playwright>=1.40.0",
+    "aiohttp>=3.9.1",
+    "fastapi>=0.104.1",
+    "uvicorn>=0.24.0",
+    "pydantic>=2.5.0",
+    "sqlalchemy>=2.0.23",
+    "numpy>=1.26.0,<2.0.0",
+    "pandas>=2.0.3",
+    "scikit-learn>=1.3.2",
+    "python-dotenv>=1.0.0",
+    "pyyaml>=6.0.1",
+    "jinja2>=3.1.2",
+    "anthropic>=0.7.7",
+    "openai>=1.3.0",
+    "google-generativeai>=0.3.0",
+    "aiofiles>=23.2.1",
+    "httpx>=0.25.2",
+    "tenacity>=8.2.3",
+    "beautifulsoup4>=4.12.2",
+    "lxml>=4.9.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.3",
+    "pytest-asyncio>=0.23.2",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.12.0",
+    "black>=23.11.0",
+    "flake8>=6.1.0",
+    "mypy>=1.7.1",
+    "isort>=5.12.0",
+    "pre-commit>=3.5.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/autoplaytest"
+Documentation = "https://autoplaytest.readthedocs.io"
+Repository = "https://github.com/yourusername/autoplaytest"
+Issues = "https://github.com/yourusername/autoplaytest/issues"
+
+[project.scripts]
+autoplaytest = "src.simple_runner:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*", "config*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.yaml", "*.yml", "*.md", "*.json"]
+
+[tool.black]
+line-length = 100
+target-version = ['py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --strict-markers"
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "ai: marks tests that require AI provider credentials",
+]
