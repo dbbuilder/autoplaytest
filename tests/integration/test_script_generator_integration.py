@@ -42,9 +42,24 @@ class TestAIScriptGeneratorIntegration:
         mock_page.url = "https://example.com/login"
         mock_page.title = AsyncMock(return_value="Login Page")
         mock_page.content = AsyncMock(return_value="<html>Login form</html>")
-        mock_page.viewport_size = {"width": 1920, "height": 1080}
-        mock_page.locator = Mock(return_value=AsyncMock(count=AsyncMock(return_value=2)))
-        mock_page.evaluate = AsyncMock(return_value={})
+        mock_page.viewport_size = AsyncMock(return_value={"width": 1920, "height": 1080})
+        
+        # Setup locator mock properly
+        mock_locator = AsyncMock()
+        mock_locator.count = AsyncMock(return_value=2)
+        mock_locator.get_attribute = AsyncMock(return_value="value")
+        mock_page.locator = Mock(return_value=mock_locator)
+        
+        # Mock evaluate for interactive elements
+        mock_page.evaluate = AsyncMock(return_value=[
+            {"selector": "input", "type": "text", "interactive": True},
+            {"selector": "button", "type": "button", "interactive": True}
+        ])
+        
+        # Mock other required methods
+        mock_page.goto = AsyncMock()
+        mock_page.wait_for_load_state = AsyncMock()
+        mock_page.screenshot = AsyncMock()
         
         # Setup Claude mock
         mock_client = AsyncMock()
@@ -98,17 +113,28 @@ class TestAIScriptGeneratorIntegration:
         # Setup mocks
         mock_browser = AsyncMock()
         mock_page = AsyncMock()
+        mock_context = AsyncMock()
         
         mock_playwright_instance = AsyncMock()
         mock_playwright.return_value.__aenter__.return_value = mock_playwright_instance
         mock_playwright_instance.chromium.launch = AsyncMock(return_value=mock_browser)
-        mock_browser.new_context = AsyncMock()
-        mock_browser.new_context.return_value.new_page = AsyncMock(return_value=mock_page)
+        mock_browser.new_context = AsyncMock(return_value=mock_context)
+        mock_context.new_page = AsyncMock(return_value=mock_page)
         
         # Mock page methods
         mock_page.goto = AsyncMock()
         mock_page.screenshot = AsyncMock()
         mock_page.title = AsyncMock(return_value="Test Page")
+        mock_page.url = "https://example.com"
+        mock_page.content = AsyncMock(return_value="<html>Test content</html>")
+        mock_page.viewport_size = AsyncMock(return_value={"width": 1920, "height": 1080})
+        mock_page.wait_for_load_state = AsyncMock()
+        mock_page.evaluate = AsyncMock(return_value=[])
+        
+        # Mock locator properly
+        mock_locator = AsyncMock()
+        mock_locator.count = AsyncMock(return_value=0)
+        mock_page.locator = Mock(return_value=mock_locator)
         
         with patch('ai.providers.claude_provider.AsyncAnthropic'):
             generator = AIScriptGenerator("claude")

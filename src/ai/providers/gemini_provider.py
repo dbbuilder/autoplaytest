@@ -184,3 +184,57 @@ class GeminiProvider(BaseAIProvider):
                 code_blocks[f'block_{i}'] = match.group(1).strip()
         
         return code_blocks
+    
+    async def generate_test(self, request: TestGenerationRequest) -> GeneratedTest:
+        """Generate a test using Gemini"""
+        self.logger.info(f"Generating {request.test_type.value} test")
+        
+        # Prepare the prompt
+        system_prompt = self.prompts.get('system_prompt', '')
+        generation_prompt = self.prompts.get('test_generation', '')
+        
+        # Format the prompt with context
+        formatted_prompt = self._format_prompt(
+            generation_prompt,
+            page_analysis=json.dumps(request.page_analysis.to_dict(), indent=2),
+            test_type=request.test_type.value,
+            url=request.page_analysis.url,
+            context=json.dumps(request.context or {})
+        )
+        
+        # Combine prompts for Gemini
+        full_prompt = f"{system_prompt}\n\n{formatted_prompt}"
+        
+        try:
+            # Generate the test
+            response = await asyncio.to_thread(
+                self.model.generate_content,
+                full_prompt
+            )
+            
+            # Extract code blocks from response
+            code_blocks = self._extract_code_blocks(response.text)
+            
+            # Get the main test code
+            test_code = ''
+            if 'test' in code_blocks:
+                test_code = code_blocks['test']
+            elif 'python' in code_blocks:
+                test_code = code_blocks['python']
+            elif code_blocks:
+                test_code = next(iter(code_blocks.values()))
+            
+            # Generate file name
+            file_name = f"test_{request.test_type.value}_{request.page_analysis.page_type}.py"
+            
+            return GeneratedTest(
+                test_type=request.test_type,
+                code=test_code,
+                file_name=file_name,
+                description=f"{request.test_type.value} test for {request.page_analysis.url}",
+                page_objects=code_blocks if len(code_blocks) > 1 else {}
+            )
+            
+        except Exception as e:
+            self.logger.error(f"Failed to generate test with Gemini: {str(e)}")
+            raise
