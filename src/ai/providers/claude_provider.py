@@ -39,26 +39,26 @@ class ClaudeProvider(BaseAIProvider):
         """Use Claude to analyze a web page"""
         self.logger.info(f"Analyzing page: {url}")
         
-        # Prepare the prompt
-        system_prompt = self.prompts.get('system_prompt', '')
-        analysis_prompt = self.prompts.get('page_analysis', '')
-        
-        # Create the message
-        message = await self.client.messages.create(
-            model=self.model,
-            system=system_prompt,
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"{analysis_prompt}\n\nURL: {url}\n\nPage Content:\n{page_content[:8000]}"
-                }
-            ],
-            max_tokens=self.config.get('request_params', {}).get('max_tokens', 4096),
-            temperature=self.config.get('request_params', {}).get('temperature', 0.2)
-        )
-        
-        # Parse the response
         try:
+            # Prepare the prompt
+            system_prompt = self.prompts.get('system_prompt', '')
+            analysis_prompt = self.prompts.get('page_analysis', '')
+            
+            # Create the message
+            message = await self.client.messages.create(
+                model=self.model,
+                system=system_prompt,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": f"{analysis_prompt}\n\nURL: {url}\n\nPage Content:\n{page_content[:8000]}"
+                    }
+                ],
+                max_tokens=self.config.get('request_params', {}).get('max_tokens', 4096),
+                temperature=self.config.get('request_params', {}).get('temperature', 0.2)
+            )
+            
+            # Parse the response
             response_text = message.content[0].text
             # Extract JSON from the response
             json_start = response_text.find('{')
@@ -96,7 +96,7 @@ class ClaudeProvider(BaseAIProvider):
             )
             
         except Exception as e:
-            self.logger.error(f"Failed to parse Claude response: {str(e)}")
+            self.logger.error(f"Failed to analyze page with Claude: {str(e)}")
             # Return a basic analysis
             return PageAnalysis(
                 url=url,

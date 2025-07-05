@@ -140,9 +140,10 @@ class TestGPTProvider:
         is_valid, issues = await provider.validate_test("async def test(): pass")
         
         # Verify validation call
+        mock_client.chat.completions.create.assert_called_once()
         call_args = mock_client.chat.completions.create.call_args
-        assert call_args[1]['temperature'] == 0.1
-        assert call_args[1]['response_format'] == {"type": "json_object"}
+        assert call_args.kwargs['temperature'] == 0.1
+        assert call_args.kwargs['response_format'] == {"type": "json_object"}
         
         # Verify results
         assert is_valid is True

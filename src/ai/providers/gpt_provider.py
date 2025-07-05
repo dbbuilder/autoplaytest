@@ -149,28 +149,22 @@ class GPTProvider(BaseAIProvider):
         """Validate generated test code using GPT"""
         self.logger.info("Validating generated test code")
         
-        validation_prompt = """
-        Please validate this Playwright test code and identify any issues.
+        validation_prompt = """Please validate this Playwright test code and identify any issues.
         
-        Check for:
-        1. Syntax errors
-        2. Missing imports
-        3. Incorrect Playwright API usage
-        4. Missing async/await
-        5. Test structure issues
-        
-        Return a JSON response with:
-        {
-            "is_valid": boolean,
-            "issues": ["list of issues found"],
-            "suggestions": ["list of improvement suggestions"]
-        }
-        
-        Test code:
-        ```python
-        {code}
-        ```
-        """
+Check for:
+1. Syntax errors
+2. Missing imports
+3. Incorrect Playwright API usage
+4. Missing async/await
+5. Test structure issues
+
+Return a JSON response with the following structure:
+{"is_valid": boolean, "issues": ["list of issues found"], "suggestions": ["list of improvement suggestions"]}
+
+Test code:
+```python
+{code}
+```"""
         
         try:
             response = await self.client.chat.completions.create(
@@ -184,7 +178,8 @@ class GPTProvider(BaseAIProvider):
                 response_format={"type": "json_object"}
             )
             
-            validation_result = json.loads(response.choices[0].message.content)
+            content = response.choices[0].message.content
+            validation_result = json.loads(content)
             return validation_result.get('is_valid', False), validation_result.get('issues', [])
             
         except Exception as e:
