@@ -71,10 +71,15 @@ class ClaudeProvider(BaseAIProvider):
             # Convert to PageAnalysis object
             elements = []
             for elem in analysis_data.get('elements', []):
-                # Map 'type' to 'element_type' if needed
+                # Map fields to match PageElement dataclass
                 elem_data = elem.copy()
                 if 'type' in elem_data and 'element_type' not in elem_data:
                     elem_data['element_type'] = elem_data.pop('type')
+                if 'interactive' in elem_data and 'is_interactive' not in elem_data:
+                    elem_data['is_interactive'] = elem_data.pop('interactive')
+                # Remove any unknown fields
+                valid_fields = {'selector', 'element_type', 'text', 'attributes', 'is_interactive'}
+                elem_data = {k: v for k, v in elem_data.items() if k in valid_fields}
                 elements.append(PageElement(**elem_data))
             
             return PageAnalysis(
