@@ -1,0 +1,134 @@
+# Main Configuration for AI Playwright Test Generator
+# This file contains all configurable settings for the test generation system
+
+# AI Provider Settings
+ai_providers:
+  default_provider: "claude"  # Options: claude, gemini, gpt
+  
+  # Provider-specific configurations
+  claude:
+    enabled: true
+    api_key_env: "ANTHROPIC_API_KEY"  # Environment variable name
+    model: "claude-3-opus-20240229"
+    max_tokens: 4096
+    temperature: 0.2  # Lower for more consistent test generation
+    timeout: 30
+    
+  gemini:
+    enabled: true
+    api_key_env: "GOOGLE_API_KEY"
+    model: "gemini-1.5-pro"
+    max_tokens: 4096
+    temperature: 0.2
+    timeout: 30
+    
+  gpt:
+    enabled: true
+    api_key_env: "OPENAI_API_KEY"
+    model: "gpt-4-turbo-preview"
+    max_tokens: 4096
+    temperature: 0.2
+    timeout: 30
+
+# Test Generation Settings
+test_generation:
+  # TDD Configuration
+  tdd_mode: true
+  write_failing_tests_first: true
+  include_assertions: true
+  include_error_handling: true
+  
+  # Test Types to Generate
+  test_types:
+    - login
+    - navigation
+    - form_interaction
+    - search
+    - crud_operations
+    - api_integration
+    - accessibility
+    - performance
+    
+  # Test Framework Settings
+  framework: "playwright"
+  language: "python"
+  async_tests: true
+  
+  # Code Style
+  code_style:
+    indent_size: 4
+    use_type_hints: true
+    max_line_length: 100
+    use_page_objects: true
+    
+# Page Analysis Settings
+page_analysis:
+  # Element Detection
+  detect_forms: true
+  detect_navigation: true
+  detect_api_calls: true
+  detect_authentication: true
+  
+  # Analysis Depth
+  max_depth: 3  # How many levels deep to analyze
+  follow_links: true
+  analyze_iframes: false
+  
+  # Screenshot Settings
+  take_screenshots: true
+  screenshot_on_failure: true
+  
+# Test Execution Settings
+test_execution:
+  # Browser Settings
+  browsers:
+    - chromium
+    - firefox
+    - webkit
+    
+  # Execution Mode
+  headless: true
+  slow_mo: 0  # Milliseconds between actions
+  timeout: 30000  # Default timeout in ms
+  
+  # Parallel Execution
+  parallel: true
+  max_workers: 4
+  
+  # Retry Settings
+  retry_failed_tests: true
+  max_retries: 2
+  
+# Reporting Settings
+reporting:
+  # Report Types
+  generate_html_report: true
+  generate_json_report: true
+  generate_junit_xml: true
+  
+  # Report Details
+  include_screenshots: true
+  include_video: false
+  include_trace: true
+  include_logs: true
+  
+  # Report Location
+  reports_dir: "./reports"
+  
+# Logging Settings
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  log_to_file: true
+  log_file: "./logs/test_generator.log"
+  log_format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  
+# Performance Settings
+performance:
+  # Thresholds
+  page_load_threshold: 3000  # ms
+  api_response_threshold: 1000  # ms
+  
+  # Monitoring
+  monitor_cpu: true
+  monitor_memory: true
+  monitor_network: true

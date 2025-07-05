@@ -16,3 +16,8 @@ class PerformanceMonitor:
     async def shutdown(self):
         """Shutdown the performance monitor."""
         pass
+
+    
+    async def shutdown(self) -> None:
+        """Shutdown the Performance Monitor."""
+        pass  # Placeholder for cleanup if needed

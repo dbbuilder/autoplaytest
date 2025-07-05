@@ -1,0 +1,27 @@
+{
+  "url": "http://localhost:5173",
+  "username": "admin@faithvision.net",
+  "password": "admin123",
+  "test_types": [
+    "login",
+    "navigation",
+    "forms",
+    "search"
+  ],
+  "browser": "chromium",
+  "headless": false,
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "timeout": 30000,
+  "concurrent_users": 1,
+  "test_duration": 300,
+  "performance_thresholds": {
+    "page_load_time": 3.0,
+    "first_contentful_paint": 1.5,
+    "largest_contentful_paint": 2.5,
+    "cumulative_layout_shift": 0.1
+  },
+  "custom_scenarios": []
+}

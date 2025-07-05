@@ -1,0 +1,21 @@
+# AI Provider Requirements
+# Add these to your main requirements.txt or install separately
+
+# Claude (Anthropic)
+anthropic>=0.18.0
+
+# Gemini (Google)
+google-generativeai>=0.3.0
+
+# GPT (OpenAI)
+openai>=1.12.0
+
+# Additional dependencies for AI features
+beautifulsoup4>=4.12.0  # For HTML parsing
+aiohttp>=3.9.0  # For async HTTP requests
+tenacity>=8.2.0  # For retry logic
+pydantic>=2.0.0  # For data validation
+
+# Page analysis dependencies
+lxml>=4.9.0  # For XML/HTML processing
+cssselect>=1.2.0  # For CSS selector parsing

@@ -7,9 +7,16 @@ import asyncio
 import argparse
 import json
 import sys
+import warnings
 from pathlib import Path
 from typing import Dict, Optional, Any
 import yaml
+
+# Suppress asyncio ResourceWarning on Windows
+warnings.filterwarnings("ignore", category=ResourceWarning)
+warnings.filterwarnings("ignore", message="unclosed.*<socket.socket.*>")
+warnings.filterwarnings("ignore", message="unclosed transport")
+warnings.filterwarnings("ignore", message="Exception ignored in")
 
 from core.engine.main_engine import AIPlaywrightEngine, TestConfiguration
 from utils.logger import setup_logger
@@ -325,6 +332,10 @@ def load_config_from_file(config_path: str) -> Dict[str, Any]:
 
 async def main():
     """Command-line interface for the Simple Runner."""
+    # Suppress asyncio ResourceWarning on Windows
+    import warnings
+    warnings.filterwarnings("ignore", category=ResourceWarning)
+    
     parser = argparse.ArgumentParser(description='AI Playwright Testing Engine')
     
     # Global arguments

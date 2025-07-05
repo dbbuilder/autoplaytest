@@ -1,0 +1,18 @@
+[
+  {
+    "filename": "test_login_000.py",
+    "type": "login",
+    "description": "Login functionality test",
+    "estimated_duration": 30,
+    "dependencies": [],
+    "priority": "medium"
+  },
+  {
+    "filename": "test_navigation_001.py",
+    "type": "navigation",
+    "description": "Navigation test",
+    "estimated_duration": 30,
+    "dependencies": [],
+    "priority": "medium"
+  }
+]

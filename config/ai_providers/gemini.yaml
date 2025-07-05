@@ -1,0 +1,80 @@
+# Gemini AI Provider Configuration
+# Settings specific to Google's Gemini API
+
+provider:
+  name: "gemini"
+  display_name: "Google Gemini Pro"
+  api_base_url: "https://generativelanguage.googleapis.com/v1"
+  
+models:
+  default: "gemini-1.5-pro"
+  available:
+    - name: "gemini-1.5-pro"
+      max_tokens: 8192
+      supports_vision: true
+      cost_per_1k_input: 0.00125
+      cost_per_1k_output: 0.00375
+      
+    - name: "gemini-1.5-flash"
+      max_tokens: 8192
+      supports_vision: true
+      cost_per_1k_input: 0.00025
+      cost_per_1k_output: 0.00075
+      
+    - name: "gemini-1.0-pro"
+      max_tokens: 8192
+      supports_vision: false
+      cost_per_1k_input: 0.0005
+      cost_per_1k_output: 0.0015
+
+# Request parameters
+request_params:
+  temperature: 0.2
+  max_output_tokens: 8192
+  top_p: 0.95
+  top_k: 40
+  candidate_count: 1
+  
+# Safety settings
+safety_settings:
+  - category: "HARM_CATEGORY_HARASSMENT"
+    threshold: "BLOCK_NONE"
+  - category: "HARM_CATEGORY_HATE_SPEECH"
+    threshold: "BLOCK_NONE"
+  - category: "HARM_CATEGORY_SEXUALLY_EXPLICIT"
+    threshold: "BLOCK_NONE"
+  - category: "HARM_CATEGORY_DANGEROUS_CONTENT"
+    threshold: "BLOCK_NONE"
+    
+# Rate limiting
+rate_limits:
+  requests_per_minute: 60
+  tokens_per_minute: 60000
+  concurrent_requests: 10
+  
+# Retry configuration
+retry:
+  max_attempts: 3
+  initial_delay: 1
+  max_delay: 10
+  exponential_base: 2
+  
+# Special features
+features:
+  supports_system_prompt: true
+  supports_function_calling: true
+  supports_vision: true
+  supports_streaming: true
+  max_context_window: 1000000  # 1M tokens for Gemini 1.5
+  
+# Error handling
+error_messages:
+  rate_limit: "Gemini API rate limit reached"
+  api_error: "Gemini API error occurred"
+  timeout: "Request timed out"
+  invalid_key: "Invalid Google API key"
+  
+# Generation config
+generation_config:
+  stop_sequences: []
+  response_mime_type: "text/plain"

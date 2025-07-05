@@ -13,15 +13,15 @@ from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
 import yaml
 
-from ..script_generator.ai_script_generator import AIScriptGenerator
-from ..executor.test_executor import TestExecutor
-from ...ai.pattern_analyzer import PatternAnalyzer
-from ...monitoring.performance.performance_monitor import PerformanceMonitor
-from ...monitoring.errors.error_detector import ErrorDetector
-from ...reporting.generators.report_generator import ReportGenerator
-from ...utils.config_manager import ConfigManager
-from ...utils.logger import setup_logger
-from ...utils.database import DatabaseManager
+from core.script_generator.ai_script_generator import AIScriptGenerator
+from core.executor.test_executor import TestExecutor
+from ai.pattern_analyzer import PatternAnalyzer
+from monitoring.performance.performance_monitor import PerformanceMonitor
+from monitoring.errors.error_detector import ErrorDetector
+from reporting.generators.report_generator import ReportGenerator
+from utils.config_manager import ConfigManager
+from utils.logger import setup_logger
+from utils.database import DatabaseManager
 
 
 @dataclass
@@ -227,33 +227,43 @@ class AIPlaywrightEngine:
             
             # Generate test scripts based on analysis
             self.logger.info("Generating AI-powered test scripts...")
+            # Convert TestConfiguration to dict for backward compatibility
+            config_dict = {
+                'url': config.url,
+                'username': config.username,
+                'password': config.password,
+                'test_types': config.test_types,
+                'browser': config.browser,
+                'headless': config.headless,
+                'timeout': config.timeout
+            }
             generated_scripts = await self.script_generator.generate_test_suite(
                 analysis_results=analysis_results,
-                config=config
+                config=config_dict
             )
             
             # Save scripts to files
             script_manifest = []
             for i, script in enumerate(generated_scripts):
-                script_filename = f"test_{script['type']}_{i:03d}.py"
+                script_filename = f"test_{script.get('test_type', 'unknown')}_{i:03d}.py"
                 script_path = output_path / script_filename
                 
                 # Write the complete Playwright script
                 with open(script_path, 'w', encoding='utf-8') as f:
-                    f.write(script['code'])
+                    f.write(script.get('content', script.get('code', '')))
                 
                 # Create script metadata
                 metadata = {
                     'filename': script_filename,
-                    'type': script['type'],
-                    'description': script['description'],
+                    'type': script.get('test_type', 'unknown'),
+                    'description': script.get('description', ''),
                     'estimated_duration': script.get('estimated_duration', 30),
                     'dependencies': script.get('dependencies', []),
                     'priority': script.get('priority', 'medium')
                 }
                 script_manifest.append(metadata)
                 
-                self.logger.info(f"Generated script: {script_filename} ({script['type']})")
+                self.logger.info(f"Generated script: {script_filename} ({script.get('test_type', 'unknown')})")
             
             # Save script manifest
             manifest_path = output_path / "script_manifest.json"

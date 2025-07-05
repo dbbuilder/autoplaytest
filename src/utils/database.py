@@ -16,3 +16,9 @@ class DatabaseManager:
     async def shutdown(self):
         """Shutdown the database manager."""
         pass
+
+    
+    async def shutdown(self) -> None:
+        """Shutdown the Database Manager."""
+        if hasattr(self, 'connection') and self.connection:
+            await self.connection.close()

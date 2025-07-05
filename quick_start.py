@@ -6,7 +6,11 @@ This script helps users get started quickly with the testing engine.
 
 import asyncio
 import sys
+import warnings
 from pathlib import Path
+
+# Suppress asyncio ResourceWarning on Windows
+warnings.filterwarnings("ignore", category=ResourceWarning)
 
 # Add the src directory to the Python path
 src_path = Path(__file__).parent / "src"

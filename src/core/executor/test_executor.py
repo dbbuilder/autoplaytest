@@ -16,9 +16,9 @@ import psutil
 import traceback
 
 from playwright.async_api import async_playwright, Browser, BrowserContext, Page
-from ...utils.logger import setup_logger
-from ...monitoring.performance.performance_monitor import PerformanceMonitor
-from ...monitoring.errors.error_detector import ErrorDetector
+from utils.logger import setup_logger
+from monitoring.performance.performance_monitor import PerformanceMonitor
+from monitoring.errors.error_detector import ErrorDetector
 
 
 class TestExecutor:
@@ -217,3 +217,30 @@ class TestExecutor:
             'script_content': script_content,
             'enhanced_script': enhanced_script
         }
+    
+    async def shutdown(self) -> None:
+        """
+        Gracefully shutdown the Test Executor and cleanup resources.
+        """
+        self.logger.info("Shutting down Test Executor...")
+        
+        try:
+            # Cleanup any running browser instances
+            if hasattr(self, 'browser') and self.browser:
+                await self.browser.close()
+                
+            # Cleanup temporary directories
+            if hasattr(self, 'temp_dirs'):
+                for temp_dir in self.temp_dirs:
+                    if temp_dir.exists():
+                        import shutil
+                        shutil.rmtree(temp_dir, ignore_errors=True)
+            
+            # Clear execution metrics
+            self.execution_metrics.clear()
+            
+            self.logger.info("Test Executor shutdown completed")
+            
+        except Exception as e:
+            self.logger.error(f"Error during Test Executor shutdown: {str(e)}")
+            # Don't raise, just log the error

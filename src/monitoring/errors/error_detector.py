@@ -16,3 +16,8 @@ class ErrorDetector:
     async def shutdown(self):
         """Shutdown the error detector."""
         pass
+
+    
+    async def shutdown(self) -> None:
+        """Shutdown the Error Detector."""
+        pass  # Placeholder for cleanup if needed
