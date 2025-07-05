@@ -1,0 +1,47 @@
+# Project Configuration
+project_name = "autoplaytest"
+environment  = "production"
+region       = "us-east-1"
+
+# API Keys (Required - stored securely in AWS Secrets Manager)
+anthropic_api_key = "sk-ant-api03-..."
+openai_api_key    = "sk-..."
+google_api_key    = "AIza..."
+
+# Lambda Configuration
+lambda_memory_size = 3008  # Maximum memory for better performance
+lambda_timeout     = 900   # 15 minutes maximum
+lambda_reserved_concurrent_executions = -1  # No limit
+
+# Features
+enable_xray = true   # Enable AWS X-Ray tracing
+enable_vpc  = true   # Required for Playwright to work properly
+enable_api_key = true  # Require API key for API Gateway
+enable_dead_letter_queue = true
+
+# API Gateway Configuration
+api_rate_limit  = 100  # Requests per second
+api_burst_limit = 200  # Burst capacity
+
+# DynamoDB Configuration
+dynamodb_read_capacity  = 0  # 0 = On-demand billing
+dynamodb_write_capacity = 0  # 0 = On-demand billing
+
+# Storage Configuration
+s3_retention_days = 90  # Days to retain test results
+log_retention_days = 30  # CloudWatch log retention
+
+# Monitoring
+alarm_email = "alerts@example.com"  # Email for CloudWatch alarms
+
+# Network Configuration
+allowed_cidr_blocks = ["0.0.0.0/0"]  # Restrict for production
+
+# Tags
+tags = {
+  Project     = "AutoPlayTest"
+  ManagedBy   = "Terraform"
+  Environment = "production"
+  Owner       = "DevOps Team"
+  CostCenter  = "Engineering"
+}
