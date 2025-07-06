@@ -1,0 +1,11 @@
+# Optional visualization packages
+# These may require additional system dependencies or compilation
+
+# For Windows users with compilation issues, you can either:
+# 1. Install pre-built wheels: pip install matplotlib --only-binary :all:
+# 2. Use conda: conda install matplotlib
+# 3. Skip these packages if not needed for core functionality
+
+matplotlib>=3.7.0
+plotly==5.18.0
+seaborn==0.13.0

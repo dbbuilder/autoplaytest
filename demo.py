@@ -12,6 +12,19 @@ from datetime import datetime
 import json
 from typing import Dict, Any
 
+# Set UTF-8 encoding for Windows console
+if sys.platform == 'win32':
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+    
+    # Suppress Windows-specific asyncio warnings
+    import warnings
+    warnings.filterwarnings("ignore", category=ResourceWarning)
+    warnings.filterwarnings("ignore", message="unclosed.*<socket.socket.*>")
+    warnings.filterwarnings("ignore", message="unclosed transport")
+    warnings.filterwarnings("ignore", message="Exception ignored in")
+
 # Check for required dependencies
 try:
     import playwright
@@ -25,31 +38,52 @@ except ImportError:
     print("  playwright install chromium")
     sys.exit(1)
 
-# Add the src directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+# Add the project root to the path
+project_root = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, project_root)
+
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    env_path = os.path.join(project_root, '.env')
+    if os.path.exists(env_path):
+        load_dotenv(env_path)
+        print(f"✅ Loaded environment from: {env_path}")
+    else:
+        print(f"⚠️  No .env file found at: {env_path}")
+except ImportError:
+    print("⚠️  python-dotenv not installed. Install with: pip install python-dotenv")
+
+MOCK_MODE_ONLY = False
+run_test_suite = None
+generate_test_scripts = None
 
 try:
     from src.simple_runner import run_test_suite, generate_test_scripts
     from src.utils.logger import setup_logger
 except ImportError as e:
-    print(f"❌ Import error: {e}")
-    print("\nPlease ensure all dependencies are installed:")
-    print("  pip install -r requirements.txt")
-    print("\nFor AI providers, also install:")
-    print("  pip install anthropic openai google-generativeai")
-    print("\nOr continue with mock mode (no AI providers needed)")
-    print()
-    
-    # Try to import without AI providers for mock mode
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
+    # Try alternate import path
     try:
-        from src.utils.logger import setup_logger
-        from src.utils.mock_generator import MockTestGenerator
-        MOCK_MODE_ONLY = True
-    except ImportError:
-        print("❌ Cannot run even in mock mode. Please install base dependencies:")
-        print("  pip install aiohttp pydantic python-dotenv pyyaml")
-        sys.exit(1)
+        sys.path.insert(0, os.path.join(project_root, 'src'))
+        from simple_runner import run_test_suite, generate_test_scripts
+        from utils.logger import setup_logger
+    except ImportError as e2:
+        print(f"⚠️  Import warning: {e}")
+        print(f"    Alternate path also failed: {e2}")
+        
+        # Try to import just the logger and mock generator
+        try:
+            from src.utils.logger import setup_logger
+            from src.utils.mock_generator import MockTestGenerator
+            MOCK_MODE_ONLY = True
+            print("\n📌 Running in MOCK MODE - unable to import main modules")
+            print("   This might be due to missing dependencies.")
+        except ImportError:
+            print("\n❌ Cannot import basic modules. Please install dependencies:")
+            print("   pip install -r requirements.txt")
+            print("\nOr run the standalone mock demo:")
+            print("   python demo_mock.py")
+            sys.exit(1)
 
 # Demo configuration
 DEMO_SITES = {
@@ -122,6 +156,9 @@ class DemoRunner:
             self.logger.error(f"Unknown site: {site_key}")
             return None
         
+        # Set the AI provider environment variable
+        os.environ['DEFAULT_AI_PROVIDER'] = ai_provider
+        
         print(f"\n{'='*60}")
         print(f"🌐 Testing: {site['url']}")
         print(f"🤖 AI Provider: {ai_provider}")
@@ -129,6 +166,11 @@ class DemoRunner:
         print(f"{'='*60}\n")
         
         try:
+            # Check if we're in mock mode only
+            if MOCK_MODE_ONLY:
+                print(f"📌 Running in mock mode (AI providers not available)")
+                return await self.run_mock_demo(site_key)
+            
             # Check if AI provider key is set
             env_key_map = {
                 "claude": "ANTHROPIC_API_KEY",
@@ -136,8 +178,18 @@ class DemoRunner:
                 "gemini": "GOOGLE_API_KEY"
             }
             
-            if not os.getenv(env_key_map.get(ai_provider, "")):
-                print(f"⚠️  Warning: {env_key_map.get(ai_provider)} not set in environment")
+            # Debug: Show which keys are found
+            print("🔍 Checking API keys:")
+            for provider, key_name in env_key_map.items():
+                key_value = os.getenv(key_name)
+                if key_value:
+                    print(f"   ✅ {key_name}: Found (length: {len(key_value)})")
+                else:
+                    print(f"   ❌ {key_name}: Not found")
+            
+            provider_key = env_key_map.get(ai_provider, "")
+            if not os.getenv(provider_key):
+                print(f"\n⚠️  Warning: {provider_key} not set for {ai_provider}")
                 print("   Using mock mode for demonstration...")
                 return await self.run_mock_demo(site_key)
             
@@ -178,7 +230,7 @@ class DemoRunner:
                     ai_provider=ai_provider,
                     browser="chromium",
                     headless=headless,
-                    timeout=30000
+                    timeout=60000
                 )
                 
                 duration = (datetime.now() - start_time).total_seconds()
@@ -192,6 +244,13 @@ class DemoRunner:
             self.logger.error(f"Demo failed: {str(e)}")
             print(f"\n❌ Demo failed: {str(e)}")
             return None
+        finally:
+            # Ensure any async resources are cleaned up
+            await asyncio.sleep(0.1)  # Give tasks time to complete
+            
+            # Force garbage collection to clean up Playwright resources
+            import gc
+            gc.collect()
     
     async def run_mock_demo(self, site_key: str) -> Dict[str, Any]:
         """Run a mock demo when API keys are not available"""
@@ -240,6 +299,40 @@ class DemoRunner:
                     {"name": "test_checkboxes", "status": "passed", "duration": 2.2},
                     {"name": "test_dynamic_content", "status": "passed", "duration": 4.3},
                     {"name": "test_javascript_alerts", "status": "passed", "duration": 3.4}
+                ]
+            },
+            "automationexercise": {
+                "total_tests": 10,
+                "passed": 9,
+                "failed": 1,
+                "skipped": 0,
+                "duration": 35.2,
+                "tests": [
+                    {"name": "test_user_registration", "status": "passed", "duration": 4.2},
+                    {"name": "test_login_valid_credentials", "status": "passed", "duration": 2.8},
+                    {"name": "test_product_search", "status": "passed", "duration": 3.1},
+                    {"name": "test_add_to_cart", "status": "passed", "duration": 2.5},
+                    {"name": "test_cart_quantity_update", "status": "passed", "duration": 3.2},
+                    {"name": "test_checkout_process", "status": "failed", "duration": 6.4,
+                     "error": "Payment gateway timeout"},
+                    {"name": "test_category_navigation", "status": "passed", "duration": 2.9},
+                    {"name": "test_product_filters", "status": "passed", "duration": 3.7},
+                    {"name": "test_contact_form", "status": "passed", "duration": 2.3},
+                    {"name": "test_newsletter_subscription", "status": "passed", "duration": 4.1}
+                ]
+            },
+            "reqres": {
+                "total_tests": 5,
+                "passed": 5,
+                "failed": 0,
+                "skipped": 0,
+                "duration": 12.3,
+                "tests": [
+                    {"name": "test_get_users_list", "status": "passed", "duration": 1.8},
+                    {"name": "test_create_user", "status": "passed", "duration": 2.3},
+                    {"name": "test_update_user", "status": "passed", "duration": 2.5},
+                    {"name": "test_delete_user", "status": "passed", "duration": 2.1},
+                    {"name": "test_user_registration_api", "status": "passed", "duration": 3.6}
                 ]
             }
         }
@@ -395,6 +488,11 @@ if __name__ == "__main__":
     
     # Run the demo
     try:
+        # Use asyncio.run() which properly closes the event loop
+        if sys.platform == 'win32':
+            # Set Windows event loop policy to prevent warnings
+            asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+        
         asyncio.run(main())
     except KeyboardInterrupt:
         print("\n\n👋 Demo cancelled by user")
@@ -402,3 +500,7 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n❌ Demo error: {str(e)}")
         sys.exit(1)
+    finally:
+        # Ensure all async generators are closed on Windows
+        if sys.platform == 'win32':
+            asyncio.set_event_loop_policy(None)

@@ -49,6 +49,17 @@ class AIScriptGenerator:
     async def initialize(self):
         """Initialize the script generator"""
         self.logger.info("AI Script Generator initialized")
+    
+    def set_provider(self, provider_type: str):
+        """
+        Change the AI provider type
+        
+        Args:
+            provider_type: Provider type (claude, gemini, gpt)
+        """
+        self.provider_type = AIProviderType(provider_type.lower())
+        self.provider = AIProviderFactory.create_provider(self.provider_type)
+        self.logger.info(f"Changed AI provider to: {self.provider_type.value}")
         
     async def analyze_and_generate(
         self,
@@ -164,8 +175,8 @@ class AIScriptGenerator:
                 
                 page = await context.new_page()
                 
-                # Navigate to the page
-                await page.goto(url, wait_until='networkidle')
+                # Navigate to the page with increased timeout
+                await page.goto(url, wait_until='networkidle', timeout=60000)
                 
                 # Analyze the page
                 analysis = await self.page_analyzer.analyze_page(page)

@@ -244,3 +244,117 @@ class TestExecutor:
         except Exception as e:
             self.logger.error(f"Error during Test Executor shutdown: {str(e)}")
             # Don't raise, just log the error
+    
+    async def _execute_with_monitoring(
+        self,
+        execution_env: Dict[str, Any],
+        execution_result: Dict[str, Any],
+        config: Any
+    ) -> None:
+        """
+        Execute the test script with comprehensive monitoring.
+        
+        Args:
+            execution_env: Dictionary containing execution environment details
+            execution_result: Dictionary to store execution results
+            config: Test configuration
+        """
+        import subprocess
+        import sys
+        import json
+        from pathlib import Path
+        
+        script_path = execution_env['enhanced_script_path']
+        temp_dir = execution_env['temp_dir']
+        
+        self.logger.info(f"Executing script with monitoring: {script_path}")
+        
+        try:
+            # Prepare pytest command
+            cmd = [
+                sys.executable,
+                '-m', 'pytest',
+                script_path,
+                '-v',
+                '--json-report',
+                '--json-report-file=' + str(Path(temp_dir) / 'report.json'),
+                '--tb=short'
+            ]
+            
+            # Add performance monitoring
+            start_time = time.time()
+            
+            # Execute the script
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=300  # 5 minute timeout
+            )
+            
+            end_time = time.time()
+            duration = end_time - start_time
+            
+            # Capture performance metrics
+            execution_result['performance_metrics'] = {
+                'duration': duration,
+                'start_time': start_time,
+                'end_time': end_time
+            }
+            
+            # Mark that pytest was used
+            execution_result['pytest_used'] = True
+            
+            # Parse test results
+            report_file = Path(temp_dir) / 'report.json'
+            if report_file.exists():
+                with open(report_file, 'r') as f:
+                    test_report = json.load(f)
+                    execution_result['test_results'] = test_report
+                    
+                    # Check if tests passed
+                    if test_report.get('summary', {}).get('failed', 0) > 0:
+                        execution_result['test_failed'] = True
+                        execution_result['errors'].append({
+                            'type': 'test_failure',
+                            'message': f"Tests failed: {test_report['summary']['failed']} failures",
+                            'details': test_report
+                        })
+            
+            # Capture console output
+            if result.stdout:
+                execution_result['console_logs'].append({
+                    'type': 'stdout',
+                    'content': result.stdout,
+                    'timestamp': datetime.now().isoformat()
+                })
+            
+            if result.stderr:
+                execution_result['console_logs'].append({
+                    'type': 'stderr',
+                    'content': result.stderr,
+                    'timestamp': datetime.now().isoformat()
+                })
+            
+            # Check return code
+            if result.returncode != 0:
+                execution_result['errors'].append({
+                    'type': 'execution_error',
+                    'message': f"Script execution failed with return code: {result.returncode}",
+                    'stdout': result.stdout,
+                    'stderr': result.stderr
+                })
+                
+        except subprocess.TimeoutExpired:
+            execution_result['errors'].append({
+                'type': 'timeout',
+                'message': 'Script execution timed out after 300 seconds'
+            })
+        except Exception as e:
+            execution_result['errors'].append({
+                'type': 'execution_error',
+                'message': str(e),
+                'traceback': traceback.format_exc()
+            })
+            
+        self.logger.info("Script execution with monitoring completed")

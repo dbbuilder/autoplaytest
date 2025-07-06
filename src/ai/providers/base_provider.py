@@ -21,7 +21,9 @@ class TestType(Enum):
     LOGIN = "login"
     NAVIGATION = "navigation"
     FORM_INTERACTION = "form_interaction"
+    FORMS = "forms"  # Alias for form_interaction
     SEARCH = "search"
+    CART = "cart"  # Shopping cart functionality
     CRUD_OPERATIONS = "crud"
     API_INTEGRATION = "api"
     PERFORMANCE = "performance"
@@ -186,6 +188,12 @@ class BaseAIProvider(ABC):
         if any('search' in element.attributes.get('name', '').lower() 
                for element in analysis.elements if element.attributes):
             applicable.append(TestType.SEARCH)
+        
+        # Check for cart/shopping functionality
+        if any(keyword in str(element.attributes).lower() or keyword in str(element.text).lower()
+               for element in analysis.elements
+               for keyword in ['cart', 'basket', 'checkout', 'add to cart', 'shopping']):
+            applicable.append(TestType.CART)
         
         if analysis.api_endpoints:
             applicable.append(TestType.API_INTEGRATION)

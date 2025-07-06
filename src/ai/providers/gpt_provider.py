@@ -130,10 +130,20 @@ class GPTProvider(BaseAIProvider):
             )
             
             response_text = response.choices[0].message.content
+            self.logger.info(f"GPT Response length: {len(response_text) if response_text else 0}")
+            if len(response_text) < 100:
+                self.logger.warning(f"Short GPT response: {response_text}")
             
             # Extract code blocks
             code_blocks = self._extract_code_blocks(response_text)
+            self.logger.debug(f"Extracted code blocks: {list(code_blocks.keys())}")
+            
             test_code = code_blocks.get('test', '') or code_blocks.get('python', '')
+            if not test_code and code_blocks:
+                # Try to get the first code block
+                test_code = next(iter(code_blocks.values()))
+            
+            self.logger.debug(f"Test code length: {len(test_code)}")
             page_object_code = code_blocks.get('page_object', '')
             
             # Generate file name

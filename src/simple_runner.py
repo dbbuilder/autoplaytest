@@ -18,6 +18,12 @@ warnings.filterwarnings("ignore", message="unclosed.*<socket.socket.*>")
 warnings.filterwarnings("ignore", message="unclosed transport")
 warnings.filterwarnings("ignore", message="Exception ignored in")
 
+# Additional suppression for Windows subprocess issues
+if sys.platform == 'win32':
+    warnings.filterwarnings("ignore", message=".*_ProactorBasePipeTransport.*")
+    warnings.filterwarnings("ignore", message=".*BaseSubprocessTransport.*")
+    warnings.filterwarnings("ignore", message=".*I/O operation on closed pipe.*")
+
 from core.engine.main_engine import AIPlaywrightEngine, TestConfiguration
 from utils.logger import setup_logger
 
@@ -71,6 +77,9 @@ class SimpleRunner:
         await self._ensure_initialized()
         
         try:
+            # Extract ai_provider if present (not part of TestConfiguration)
+            ai_provider = kwargs.pop('ai_provider', None)
+            
             # Create test configuration
             config = TestConfiguration(
                 url=url,
@@ -78,6 +87,10 @@ class SimpleRunner:
                 password=password,
                 **kwargs
             )
+            
+            # Set AI provider if specified
+            if ai_provider:
+                self.engine.script_generator.set_provider(ai_provider)
             
             # Execute comprehensive test
             results = await self.engine.run_comprehensive_test(config)
@@ -134,6 +147,9 @@ class SimpleRunner:
         await self._ensure_initialized()
         
         try:
+            # Extract ai_provider if present (not part of TestConfiguration)
+            ai_provider = kwargs.pop('ai_provider', None)
+            
             # Create test configuration
             config = TestConfiguration(
                 url=url,
@@ -141,6 +157,10 @@ class SimpleRunner:
                 password=password,
                 **kwargs
             )
+            
+            # Set AI provider if specified
+            if ai_provider:
+                self.engine.script_generator.set_provider(ai_provider)
             
             # Generate scripts only
             scripts_path = await self.engine.generate_scripts_only(config, output_dir)
@@ -353,6 +373,8 @@ async def main():
     parser.add_argument('--scripts-dir', type=str, help='Directory containing scripts to execute')
     
     # Test configuration arguments
+    parser.add_argument('--ai-provider', choices=['claude', 'gpt', 'gemini'], 
+                       help='AI provider to use for test generation')
     parser.add_argument('--browser', choices=['chromium', 'firefox', 'webkit'], 
                        default='chromium', help='Browser to use')
     parser.add_argument('--headless', action='store_true', help='Run in headless mode')
@@ -380,6 +402,10 @@ async def main():
         'test_duration': args.test_duration,
         **extra_config
     }
+    
+    # Add ai_provider if specified
+    if args.ai_provider:
+        config['ai_provider'] = args.ai_provider
     
     try:
         if args.mode == 'one-line':
@@ -413,4 +439,13 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    # Handle Windows event loop properly
+    if sys.platform == 'win32':
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    
+    try:
+        asyncio.run(main())
+    finally:
+        # Clean up on Windows
+        if sys.platform == 'win32':
+            asyncio.set_event_loop_policy(None)

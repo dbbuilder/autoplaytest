@@ -7,9 +7,6 @@ from typing import Dict, Optional, Type
 from enum import Enum
 
 from .base_provider import BaseAIProvider
-from .claude_provider import ClaudeProvider
-from .gemini_provider import GeminiProvider
-from .gpt_provider import GPTProvider
 from utils.logger import setup_logger
 
 
@@ -23,17 +20,38 @@ class AIProviderType(Enum):
 class AIProviderFactory:
     """Factory for creating AI providers"""
     
-    # Registry of available providers
-    _providers: Dict[AIProviderType, Type[BaseAIProvider]] = {
-        AIProviderType.CLAUDE: ClaudeProvider,
-        AIProviderType.GEMINI: GeminiProvider,
-        AIProviderType.GPT: GPTProvider
-    }
+    # Registry of available providers (lazy loaded)
+    _providers: Dict[AIProviderType, Type[BaseAIProvider]] = None
     
     def __init__(self):
         """Initialize the factory"""
         self.logger = setup_logger(self.__class__.__name__)
         
+    @classmethod
+    def _load_providers(cls):
+        """Lazy load provider classes"""
+        if cls._providers is None:
+            cls._providers = {}
+            
+            # Try to load each provider
+            try:
+                from .claude_provider import ClaudeProvider
+                cls._providers[AIProviderType.CLAUDE] = ClaudeProvider
+            except ImportError:
+                pass
+                
+            try:
+                from .gemini_provider import GeminiProvider
+                cls._providers[AIProviderType.GEMINI] = GeminiProvider
+            except ImportError:
+                pass
+                
+            try:
+                from .gpt_provider import GPTProvider
+                cls._providers[AIProviderType.GPT] = GPTProvider
+            except ImportError:
+                pass
+    
     @classmethod
     def create_provider(
         cls, 
@@ -50,8 +68,19 @@ class AIProviderFactory:
         Returns:
             Configured AI provider instance
         """
+        cls._load_providers()
+        
         if provider_type not in cls._providers:
-            raise ValueError(f"Unknown provider type: {provider_type}")
+            # Try to give helpful error message
+            provider_name = provider_type.value
+            if provider_name == 'claude':
+                raise ValueError(f"Claude provider not available. Install with: pip install anthropic")
+            elif provider_name == 'gemini':
+                raise ValueError(f"Gemini provider not available. Install with: pip install google-generativeai")
+            elif provider_name == 'gpt':
+                raise ValueError(f"GPT provider not available. Install with: pip install openai")
+            else:
+                raise ValueError(f"Unknown provider type: {provider_type}")
         
         provider_class = cls._providers[provider_type]
         return provider_class(config_path)
@@ -87,14 +116,18 @@ class AIProviderFactory:
         Returns:
             Default provider type or None if none available
         """
+        # Load providers first
+        cls._load_providers()
+        
         availability = cls.get_available_providers()
         
         # Priority order: Claude > GPT > Gemini
-        if availability.get('claude'):
+        # But also check if the provider is actually loaded
+        if availability.get('claude') and AIProviderType.CLAUDE in cls._providers:
             return AIProviderType.CLAUDE
-        elif availability.get('gpt'):
+        elif availability.get('gpt') and AIProviderType.GPT in cls._providers:
             return AIProviderType.GPT
-        elif availability.get('gemini'):
+        elif availability.get('gemini') and AIProviderType.GEMINI in cls._providers:
             return AIProviderType.GEMINI
         else:
             return None

@@ -12,9 +12,15 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
 import yaml
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 from core.script_generator.ai_script_generator import AIScriptGenerator
 from core.executor.test_executor import TestExecutor
+from core.executor.session_aware_executor import SessionAwareTestExecutor
+from core.session.session_manager import SessionManager
 from ai.pattern_analyzer import PatternAnalyzer
 from monitoring.performance.performance_monitor import PerformanceMonitor
 from monitoring.errors.error_detector import ErrorDetector
@@ -34,7 +40,7 @@ class TestConfiguration:
     browser: str = "chromium"
     headless: bool = True
     viewport: Dict[str, int] = None
-    timeout: int = 30000
+    timeout: int = 60000
     concurrent_users: int = 1
     test_duration: int = 300  # seconds
     performance_thresholds: Dict[str, float] = None
@@ -107,11 +113,15 @@ class AIPlaywrightEngine:
         
         # Initialize core components
         self.script_generator = AIScriptGenerator()
-        self.test_executor = TestExecutor()
+        # Use SessionAwareTestExecutor for session management
+        self.test_executor = SessionAwareTestExecutor()
         self.pattern_analyzer = PatternAnalyzer()
         self.performance_monitor = PerformanceMonitor()
         self.error_detector = ErrorDetector()
         self.report_generator = ReportGenerator()
+        
+        # Session management
+        self.session_manager = SessionManager()
         
         # Runtime state
         self.active_sessions: Dict[str, TestResults] = {}
@@ -332,16 +342,24 @@ class AIPlaywrightEngine:
                     setattr(config, key, value)
         
         # Initialize test results
+        # Handle both list and dict manifest formats
+        if isinstance(script_manifest, list):
+            scripts_list = script_manifest
+        elif isinstance(script_manifest, dict):
+            scripts_list = script_manifest.get('scripts', [])
+        else:
+            scripts_list = []
+            
         results = TestResults(
             session_id=session_id,
             start_time=start_time,
-            total_tests=len(script_manifest)
+            total_tests=len(scripts_list)
         )
         self.active_sessions[session_id] = results
         
         try:
             # Execute each script in the manifest
-            for script_info in script_manifest:
+            for script_info in scripts_list:
                 script_path = scripts_path / script_info['filename']
                 
                 if not script_path.exists():
@@ -553,18 +571,173 @@ if __name__ == "__main__":
         )
         
         # Generate test scripts based on analysis
+        # Convert TestConfiguration to dict for backward compatibility
+        config_dict = {
+            'url': config.url,
+            'username': config.username,
+            'password': config.password,
+            'test_types': config.test_types,
+            'browser': config.browser,
+            'headless': config.headless,
+            'timeout': config.timeout
+        }
         generated_scripts = await self.script_generator.generate_test_suite(
             analysis_results=analysis_results,
-            config=config
+            config=config_dict
         )
         
         results.total_tests = len(generated_scripts)
         self.logger.info(f"Generated {len(generated_scripts)} test scripts")
+        
+        # Store generated scripts in results for execution phase
+        results.generated_scripts = generated_scripts
 
     async def _execute_test_scripts(self, config: TestConfiguration, results: TestResults) -> None:
-        """Internal method to execute generated test scripts."""
-        # Implementation for script execution would go here
-        pass
+        """Internal method to execute generated test scripts with session management."""
+        # First, we need to save the generated scripts to a temporary directory
+        temp_dir = Path(f"temp_scripts_{results.session_id}")
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        
+        try:
+            # Get the generated scripts from the previous phase
+            # Note: We need to modify _analyze_and_generate_scripts to store scripts in results
+            if not hasattr(results, 'generated_scripts'):
+                self.logger.warning("No generated scripts found in results")
+                return
+            
+            script_manifest = []
+            
+            # Save each generated script to disk
+            for i, script in enumerate(results.generated_scripts):
+                script_filename = f"test_{script.get('test_type', 'unknown')}_{i:03d}.py"
+                script_path = temp_dir / script_filename
+                
+                # Write the script code to file
+                with open(script_path, 'w', encoding='utf-8') as f:
+                    f.write(script.get('content', script.get('code', '')))
+                
+                # Add to manifest with full path and type
+                metadata = {
+                    'path': str(script_path),
+                    'filename': script_filename,
+                    'type': script.get('test_type', 'unknown'),
+                    'test_type': script.get('test_type', 'unknown'),
+                    'description': script.get('description', ''),
+                    'generated_at': datetime.now().isoformat()
+                }
+                script_manifest.append(metadata)
+            
+            # Save manifest
+            manifest_path = temp_dir / "script_manifest.json"
+            with open(manifest_path, 'w', encoding='utf-8') as f:
+                json.dump(script_manifest, f, indent=2)
+            
+            # Save configuration
+            config_path = temp_dir / "generation_config.json"
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(asdict(config), f, indent=2)
+            
+            # Use SessionAwareTestExecutor for execution with session management
+            if isinstance(self.test_executor, SessionAwareTestExecutor):
+                # Execute the entire suite with session management
+                suite_results = await self.test_executor.execute_test_suite(
+                    script_manifest, config, results.session_id
+                )
+                
+                # Update results from suite execution
+                passed_tests = 0
+                failed_tests = 0
+                
+                for test_result in suite_results.get('tests', []):
+                    if test_result['status'] == 'passed':
+                        passed_tests += 1
+                        self.logger.info(f"✅ Test passed: {test_result.get('script_name', 'unknown')}")
+                    else:
+                        failed_tests += 1
+                        self.logger.error(f"❌ Test failed: {test_result.get('script_name', 'unknown')}")
+                        results.errors.extend(test_result.get('errors', []))
+                    
+                    # Add performance metrics
+                    if 'performance_metrics' in test_result:
+                        results.performance_metrics[test_result.get('script_name', 'unknown')] = test_result['performance_metrics']
+                
+                # Track session usage
+                if suite_results.get('session_created'):
+                    self.logger.info("New authentication session was created")
+                if suite_results.get('session_reused_count', 0) > 0:
+                    self.logger.info(f"Session was reused {suite_results['session_reused_count']} times")
+            else:
+                # Fallback to original execution method
+                passed_tests = 0
+                failed_tests = 0
+                
+                for script_info in script_manifest:
+                    script_path = temp_dir / script_info['filename']
+                
+                try:
+                    # Import the simple test runner
+                    from core.executor.simple_test_runner import run_test_script_async
+                    
+                    # Execute the script
+                    self.logger.info(f"Executing test script: {script_info['filename']}")
+                    result = await run_test_script_async(str(script_path), timeout=300)
+                    
+                    # Update results based on execution
+                    if result.get('status') == 'passed':
+                        passed_tests += 1
+                        self.logger.info(f"✅ Test passed: {script_info['filename']}")
+                    else:
+                        failed_tests += 1
+                        error_msg = result.get('error', 'Test failed')
+                        self.logger.error(f"❌ Test failed: {script_info['filename']} - {error_msg}")
+                        results.errors.append({
+                            'script': script_info['filename'],
+                            'error': error_msg,
+                            'output': result.get('output', '')[:500],  # First 500 chars of output
+                            'timestamp': datetime.now().isoformat()
+                        })
+                    
+                    # Add execution metrics
+                    results.performance_metrics[script_info['filename']] = {
+                        'duration': result.get('duration', 0),
+                        'status': result.get('status'),
+                        'total_tests': result.get('total_tests', 0),
+                        'passed_tests': result.get('passed_tests', 0),
+                        'failed_tests': result.get('failed_tests', 0)
+                    }
+                        
+                except Exception as e:
+                    self.logger.error(f"Failed to execute {script_info['filename']}: {str(e)}")
+                    failed_tests += 1
+                    results.errors.append({
+                        'script': script_info['filename'],
+                        'error': str(e),
+                        'timestamp': datetime.now().isoformat()
+                    })
+            
+            # Update final results
+            results.passed_tests = passed_tests
+            results.failed_tests = failed_tests
+            results.status = 'completed' if failed_tests == 0 else 'completed_with_errors'
+            
+        except Exception as e:
+            self.logger.error(f"Error during test execution: {str(e)}")
+            results.status = 'failed'
+            results.errors.append({
+                'phase': 'execution',
+                'error': str(e),
+                'timestamp': datetime.now().isoformat()
+            })
+        
+        finally:
+            # Cleanup temporary directory (optional - might want to keep for debugging)
+            import shutil
+            # For now, always cleanup temp files. Can be made configurable later.
+            if temp_dir.exists():
+                try:
+                    shutil.rmtree(temp_dir)
+                except Exception as e:
+                    self.logger.warning(f"Failed to cleanup temp directory: {e}")
 
     async def _analyze_and_report(self, config: TestConfiguration, results: TestResults) -> None:
         """Internal method to analyze results and generate reports."""

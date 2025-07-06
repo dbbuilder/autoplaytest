@@ -1,0 +1,10 @@
+# Optional profiling packages
+# These require C++ compilation and may have compatibility issues
+
+# For Python 3.12 users experiencing compilation errors:
+# 1. Try installing pre-built wheels if available
+# 2. Use alternative profiling tools like py-spy
+# 3. Skip if not needed for core functionality
+
+memory-profiler==0.61.0
+# line-profiler==4.1.1  # Known Python 3.12 compatibility issues

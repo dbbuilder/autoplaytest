@@ -75,7 +75,7 @@ class AITestGenerator:
                 
                 try:
                     page = await context.new_page()
-                    await page.goto(url, wait_until="networkidle")
+                    await page.goto(url, wait_until="networkidle", timeout=60000)
                     
                     # Get page content
                     content = await page.content()

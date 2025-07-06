@@ -187,6 +187,9 @@ Thumbs.db
 *.tmp
 *.temp
 *~
+temp_scripts_*
+test_scripts_*/
+sessions/
 
 # Playwright browsers and cache
 playwright-browsers/
