@@ -191,3 +191,38 @@ Thumbs.db
 # Playwright browsers and cache
 playwright-browsers/
 .playwright/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+terraform.tfvars
+!terraform.tfvars.example
+*.tfplan
+tfplan
+
+# Lambda packages
+lambda-layer.zip
+lambda-layer-build/
+terraform/lambda_functions/*.zip
+
+# Generated test directories
+generated_tests/
+my_tests/
+
+# API keys and secrets
+.env.local
+.env.*.local
+secrets.json
+
+# Coverage reports
+htmlcov/
+.coverage.*
+coverage.json
+coverage.xml
+
+# IDE and editor files
+*.swp
+*.swo
+.vim/
+.emacs.d/
