@@ -6,9 +6,20 @@
 
 An intelligent testing framework that uses AI (Claude, GPT, Gemini) to automatically generate and execute Playwright test scripts for web applications. It analyzes your web pages, generates comprehensive test suites following TDD principles, and provides detailed reports on performance, errors, and user experience issues.
 
+## 🎬 Demo
+
+![AutoPlayTest Demo](https://github.com/dbbuilder/autoplaytest/assets/demo.gif)
+
+Try it yourself:
+```bash
+# Quick demo - no API key required!
+python demo.py
+```
+
 ## 🌟 Features
 
 - **AI-Powered Test Generation**: Leverages Claude, GPT-4, or Gemini to understand your web application and generate meaningful tests
+- **Interactive Demo**: Try the framework instantly with built-in demo sites - no setup required!
 - **Multiple Test Types**: Login flows, navigation, forms, CRUD operations, API integration, accessibility, and more
 - **TDD Approach**: Generates tests following Test-Driven Development principles
 - **Async Architecture**: Built for performance and scalability
@@ -52,6 +63,18 @@ DEFAULT_AI_PROVIDER=claude
 
 ### 3. Run Your First Test
 
+#### Option A: Run the Demo (Recommended)
+```bash
+# Windows
+demo.bat
+
+# Linux/macOS
+./demo.sh
+```
+
+The demo will guide you through testing popular demo sites with or without API keys.
+
+#### Option B: Test Your Own Site
 ```bash
 # Activate virtual environment
 source venv/bin/activate  # On Windows: venv\Scripts\activate
