@@ -8,8 +8,15 @@ import json
 import asyncio
 from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime
-import openai
-from openai import AsyncOpenAI
+
+try:
+    import openai
+    from openai import AsyncOpenAI
+except ImportError:
+    raise ImportError(
+        "openai package is not installed. "
+        "Please install it with: pip install openai"
+    )
 
 from .base_provider import (
     BaseAIProvider, PageAnalysis, TestGenerationRequest,

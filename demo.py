@@ -12,11 +12,44 @@ from datetime import datetime
 import json
 from typing import Dict, Any
 
+# Check for required dependencies
+try:
+    import playwright
+except ImportError:
+    print("❌ Playwright is not installed!")
+    print("\nPlease install dependencies first:")
+    print("  pip install -r requirements.txt")
+    print("  playwright install chromium")
+    print("\nOr for a quick demo installation:")
+    print("  pip install playwright aiohttp pydantic python-dotenv pyyaml")
+    print("  playwright install chromium")
+    sys.exit(1)
+
 # Add the src directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
-from src.simple_runner import run_test_suite, generate_test_scripts
-from src.utils.logger import setup_logger
+try:
+    from src.simple_runner import run_test_suite, generate_test_scripts
+    from src.utils.logger import setup_logger
+except ImportError as e:
+    print(f"❌ Import error: {e}")
+    print("\nPlease ensure all dependencies are installed:")
+    print("  pip install -r requirements.txt")
+    print("\nFor AI providers, also install:")
+    print("  pip install anthropic openai google-generativeai")
+    print("\nOr continue with mock mode (no AI providers needed)")
+    print()
+    
+    # Try to import without AI providers for mock mode
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
+    try:
+        from src.utils.logger import setup_logger
+        from src.utils.mock_generator import MockTestGenerator
+        MOCK_MODE_ONLY = True
+    except ImportError:
+        print("❌ Cannot run even in mock mode. Please install base dependencies:")
+        print("  pip install aiohttp pydantic python-dotenv pyyaml")
+        sys.exit(1)
 
 # Demo configuration
 DEMO_SITES = {

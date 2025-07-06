@@ -8,7 +8,14 @@ import json
 import asyncio
 from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime
-import google.generativeai as genai
+
+try:
+    import google.generativeai as genai
+except ImportError:
+    raise ImportError(
+        "google-generativeai package is not installed. "
+        "Please install it with: pip install google-generativeai"
+    )
 
 from .base_provider import (
     BaseAIProvider, PageAnalysis, TestGenerationRequest,

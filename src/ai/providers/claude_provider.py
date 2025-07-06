@@ -8,8 +8,15 @@ import json
 import asyncio
 from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime
-import anthropic
-from anthropic import AsyncAnthropic
+
+try:
+    import anthropic
+    from anthropic import AsyncAnthropic
+except ImportError:
+    raise ImportError(
+        "anthropic package is not installed. "
+        "Please install it with: pip install anthropic"
+    )
 
 from .base_provider import (
     BaseAIProvider, PageAnalysis, TestGenerationRequest,

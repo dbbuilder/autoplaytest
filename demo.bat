@@ -6,18 +6,24 @@ echo    AutoPlayTest Demo Runner
 echo ========================================
 echo.
 
-REM Check if virtual environment exists
-if not exist "venv\Scripts\activate.bat" (
-    echo [ERROR] Virtual environment not found!
-    echo Please run setup.py first:
-    echo    python setup.py
-    echo.
-    pause
-    exit /b 1
+REM Check if we're already in a virtual environment
+if defined VIRTUAL_ENV (
+    echo Virtual environment already active: %VIRTUAL_ENV%
+) else (
+    REM Check if virtual environment exists
+    if not exist "venv\Scripts\activate.bat" (
+        echo [ERROR] Virtual environment not found!
+        echo Please run setup.py first:
+        echo    python setup.py
+        echo.
+        pause
+        exit /b 1
+    )
+    
+    REM Activate virtual environment
+    echo Activating virtual environment...
+    call venv\Scripts\activate.bat
 )
-
-REM Activate virtual environment
-call venv\Scripts\activate.bat
 
 REM Check if .env exists
 if not exist ".env" (
@@ -31,11 +37,20 @@ if not exist ".env" (
     pause
 )
 
-REM Run the demo
-python demo.py %*
+REM Check Python availability
+python --version >nul 2>&1
+if errorlevel 1 (
+    echo [ERROR] Python not found in PATH!
+    echo Please ensure Python is installed and accessible.
+    pause
+    exit /b 1
+)
 
-REM Deactivate virtual environment
-deactivate
+REM Run the demo
+echo.
+echo Starting demo...
+echo.
+python demo.py %*
 
 echo.
 echo Demo completed!
