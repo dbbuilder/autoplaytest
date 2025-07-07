@@ -2,7 +2,7 @@
 
 import logging
 from typing import Optional, Dict, Any, List
-from datetime import datetime
+from datetime import datetime, timedelta
 import asyncio
 from pathlib import Path
 import aiosqlite
@@ -343,11 +343,11 @@ class DatabaseManager:
     async def cleanup_old_sessions(self, days: int = 30) -> int:
         """Clean up old test sessions and related data."""
         try:
-            cutoff_date = datetime.now().timestamp() - (days * 24 * 60 * 60)
+            cutoff_date = (datetime.now() - timedelta(days=days)).isoformat()
             
             # Get sessions to delete
             async with self.connection.execute(
-                "SELECT session_id FROM test_sessions WHERE started_at < datetime(?, 'unixepoch')",
+                "SELECT session_id FROM test_sessions WHERE started_at < ?",
                 (cutoff_date,)
             ) as cursor:
                 sessions = await cursor.fetchall()

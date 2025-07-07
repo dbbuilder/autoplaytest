@@ -374,7 +374,8 @@ class PatternAnalyzer:
         seen_selectors = set()
         
         # Buttons
-        for button in soup.find_all(['button', 'input'], type=['button', 'submit']):
+        buttons = soup.find_all('button') + soup.find_all('input', type=['button', 'submit'])
+        for button in buttons:
             selector = self._generate_selector(button)
             if selector in seen_selectors:
                 continue
@@ -621,14 +622,14 @@ class PatternAnalyzer:
                 return True
         
         # Check for page number links
-        page_links = soup.find_all('a', text=re.compile(r'^\d+$'))
+        page_links = soup.find_all('a', string=re.compile(r'^\d+$'))
         if len(page_links) >= 3:  # Multiple page numbers
             return True
         
         # Check for next/previous links
         nav_keywords = ['next', 'previous', 'prev', '»', '«', '›', '‹']
         for keyword in nav_keywords:
-            if soup.find('a', text=re.compile(keyword, re.I)):
+            if soup.find('a', string=re.compile(keyword, re.I)):
                 return True
         
         return False

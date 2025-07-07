@@ -362,10 +362,27 @@ class PerformanceMonitor:
     
     def get_metrics_summary(self) -> Dict[str, Any]:
         """Get a summary of all collected metrics."""
+        # Get web vitals synchronously
+        vitals = WebVitals()
+        for metric in reversed(self.metrics):
+            if metric.category == "web_vitals":
+                if metric.name == "lcp" and vitals.lcp is None:
+                    vitals.lcp = metric.value
+                elif metric.name == "fid" and vitals.fid is None:
+                    vitals.fid = metric.value
+                elif metric.name == "cls" and vitals.cls is None:
+                    vitals.cls = metric.value
+                elif metric.name == "fcp" and vitals.fcp is None:
+                    vitals.fcp = metric.value
+                elif metric.name == "ttfb" and vitals.ttfb is None:
+                    vitals.ttfb = metric.value
+                elif metric.name == "tti" and vitals.tti is None:
+                    vitals.tti = metric.value
+        
         summary = {
             "total_metrics": len(self.metrics),
             "categories": {},
-            "web_vitals": asdict(asyncio.run(self.get_web_vitals())),
+            "web_vitals": asdict(vitals),
             "duration": time.time() - self.start_time if self.start_time else 0
         }
         
@@ -391,7 +408,22 @@ class PerformanceMonitor:
             "scores": {}
         }
         
-        vitals = asyncio.run(self.get_web_vitals())
+        # Get web vitals synchronously
+        vitals = WebVitals()
+        for metric in reversed(self.metrics):
+            if metric.category == "web_vitals":
+                if metric.name == "lcp" and vitals.lcp is None:
+                    vitals.lcp = metric.value
+                elif metric.name == "fid" and vitals.fid is None:
+                    vitals.fid = metric.value
+                elif metric.name == "cls" and vitals.cls is None:
+                    vitals.cls = metric.value
+                elif metric.name == "fcp" and vitals.fcp is None:
+                    vitals.fcp = metric.value
+                elif metric.name == "ttfb" and vitals.ttfb is None:
+                    vitals.ttfb = metric.value
+                elif metric.name == "tti" and vitals.tti is None:
+                    vitals.tti = metric.value
         
         # LCP Analysis (should be < 2.5s for good)
         if vitals.lcp is not None:
